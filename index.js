@@ -7,21 +7,28 @@ const path = require('path');
 
 const app = express();
 
-// allow list for CORS; add your frontend origin or use env
+// allow list for CORS; add your frontend origin(s) or use env vars
+// when the frontend runs on Vercel it will come from a public URL, not localhost.
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:8081', // webpack dev server default port
   'http://localhost:3001',
   'https://kodflix-app-one.vercel.app',
-  process.env.FRONTEND_URL,
+  // production frontend URL(s): set these in Render (or hard‑code if you prefer)
+  process.env.FRONTEND_URL,                 // e.g. https://kodfilx-frontend-git-master-...vercel.app
+  process.env.FRONTEND_URL_SECONDARY,       // placeholder for any other domain
 ].filter(Boolean);
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+      // Accept requests with no origin (curl, native apps) or from our
+      // explicit allow list, or any vercel.app subdomain to cover deployments.
+      if (!origin
+          || allowedOrigins.includes(origin)
+          || origin.endsWith('.vercel.app')) {
+        return callback(null, true);
       }
+      return callback(new Error('Not allowed by CORS'));
     },
   })
 );
