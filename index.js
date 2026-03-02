@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
+const path = require('path');
 
 const app = express();
 
@@ -25,8 +26,22 @@ app.use(
 );
 app.use(express.json());
 
+// Serve static files from frontend public folder
+app.use(express.static(path.join(__dirname, '../frontend/public')));
+
 // create a connection pool using DATABASE_URL
-const pool = mysql.createPool(process.env.DATABASE_URL);
+const dbUrl = process.env.DATABASE_URL;
+if (!dbUrl) {
+  console.error('FATAL: DATABASE_URL environment variable is not set.');
+  process.exit(1);
+}
+let pool;
+try {
+  pool = mysql.createPool(dbUrl);
+} catch (err) {
+  console.error('Error creating MySQL pool with DATABASE_URL:', err);
+  process.exit(1);
+}
 
 app.post('/signup', async (req, res) => {
   const { username, email, password } = req.body;
@@ -69,6 +84,11 @@ app.post('/login', async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
+// Serve index.html for all unmatched routes (SPA routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/public/index.html'));
+});
+
   }
 });
 
