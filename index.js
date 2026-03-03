@@ -34,6 +34,12 @@ app.use(
 );
 app.use(express.json());
 
+// Health check root: return 200 so GET / doesn't show 404 when
+// frontend static files are not deployed alongside the backend (Render).
+app.get('/', (req, res) => {
+  return res.status(200).json({ status: 'ok' });
+});
+
 // Serve static files from frontend public folder
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 
